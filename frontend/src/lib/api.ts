@@ -8,31 +8,54 @@ import type {
   TourPackage,
 } from "@/types";
 
-const API_BASE =
-  process.env.API_URL ??
-  process.env.NEXT_PUBLIC_API_URL ??
-  process.env.NEXT_PUBLIC_API_BASE_URL ??
-  "http://localhost:8000/api";
 const ADMIN_KEY = process.env.BACKEND_ADMIN_API_KEY ?? "";
 
+function unique(values: Array<string | undefined>) {
+  return [...new Set(values.filter((value): value is string => Boolean(value)))];
+}
+
+function getApiBases() {
+  if (typeof window !== "undefined") {
+    return unique(["/api", process.env.NEXT_PUBLIC_API_URL, process.env.NEXT_PUBLIC_API_BASE_URL]);
+  }
+
+  return unique([
+    process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}/api` : undefined,
+    process.env.FRONTEND_URL ? `${process.env.FRONTEND_URL.replace(/\/$/, "")}/api` : undefined,
+    process.env.API_URL,
+    process.env.NEXT_PUBLIC_API_URL,
+    process.env.NEXT_PUBLIC_API_BASE_URL,
+    "http://localhost:8000/api",
+  ]);
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const url = `${API_BASE}${path}`;
-  const response = await fetch(url, {
+  const apiBases = getApiBases();
+  const requestInit: RequestInit = {
     ...init,
-    next: { revalidate: 60 },
+    ...(init?.method && init.method !== "GET" ? {} : { next: { revalidate: 60 } }),
     headers: {
       "Content-Type": "application/json",
       ...(init?.headers ?? {}),
     },
-  });
+  };
 
-  if (!response.ok) {
+  let lastError: Error | null = null;
+
+  for (const apiBase of apiBases) {
+    const url = `${apiBase}${path}`;
+    const response = await fetch(url, requestInit);
+
+    if (response.ok) {
+      return response.json();
+    }
+
     const body = await response.text();
     console.error("API request failed", { url, path, status: response.status, body: body.slice(0, 200) });
-    throw new Error(`API request failed for ${path} (${response.status}) via ${url}`);
+    lastError = new Error(`API request failed for ${path} (${response.status}) via ${url}`);
   }
 
-  return response.json();
+  throw lastError ?? new Error(`API request failed for ${path}`);
 }
 
 export async function getHomeData() {
