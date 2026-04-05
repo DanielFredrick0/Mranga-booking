@@ -1,9 +1,11 @@
 import type { NextConfig } from "next";
 
-const nextConfig: NextConfig = {
-  turbopack: {
-    root: __dirname,
-  },
-};
+const nextConfig: NextConfig = process.env.VERCEL
+  ? {}
+  : {
+      turbopack: {
+        root: __dirname,
+      },
+    };
 
 export default nextConfig;

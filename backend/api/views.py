@@ -381,7 +381,7 @@ def healthcheck(request):
             }
         )
     except Exception as exc:
-        return Response(
-            {"status": "degraded", "service": settings.SITE_NAME, "database": "error", "detail": str(exc)},
-            status=status.HTTP_503_SERVICE_UNAVAILABLE,
-        )
+        payload = {"status": "degraded", "service": settings.SITE_NAME, "database": "error"}
+        if settings.DEBUG:
+            payload["detail"] = str(exc)
+        return Response(payload, status=status.HTTP_503_SERVICE_UNAVAILABLE)

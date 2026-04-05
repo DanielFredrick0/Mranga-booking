@@ -1,5 +1,6 @@
 from pathlib import Path
 import os
+from urllib.parse import urlparse
 
 import dj_database_url
 from dotenv import load_dotenv
@@ -23,9 +24,40 @@ def env_list(name: str, default: str = "") -> list[str]:
     return [item.strip() for item in raw.split(",") if item.strip()]
 
 
+def env_url_hostname(name: str) -> str | None:
+    raw = os.getenv(name)
+    if not raw:
+        return None
+    parsed = urlparse(raw if "://" in raw else f"https://{raw}")
+    return parsed.hostname
+
+
+def unique(items: list[str]) -> list[str]:
+    seen: set[str] = set()
+    ordered: list[str] = []
+    for item in items:
+        if item and item not in seen:
+            seen.add(item)
+            ordered.append(item)
+    return ordered
+
+
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-only-secret-key")
-DEBUG = env_bool("DJANGO_DEBUG", True)
-ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost")
+DEBUG = env_bool("DJANGO_DEBUG", False)
+
+default_hosts = ["127.0.0.1", "localhost"]
+for host_name in (
+    env_url_hostname("FRONTEND_URL"),
+    env_url_hostname("VERCEL_URL"),
+    env_url_hostname("VERCEL_BRANCH_URL"),
+    env_url_hostname("VERCEL_PROJECT_PRODUCTION_URL"),
+):
+    if host_name:
+        default_hosts.append(host_name)
+if os.getenv("VERCEL"):
+    default_hosts.append(".vercel.app")
+
+ALLOWED_HOSTS = unique(env_list("DJANGO_ALLOWED_HOSTS") + default_hosts)
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -97,9 +129,15 @@ REST_FRAMEWORK = {
     "DEFAULT_RENDERER_CLASSES": ["rest_framework.renderers.JSONRenderer"],
 }
 
-FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
-CORS_ALLOWED_ORIGINS = env_list("CORS_ALLOWED_ORIGINS", FRONTEND_URL)
-CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS", FRONTEND_URL)
+FRONTEND_URL = os.getenv("FRONTEND_URL") or (
+    f"https://{os.getenv('VERCEL_PROJECT_PRODUCTION_URL')}"
+    if os.getenv("VERCEL_PROJECT_PRODUCTION_URL")
+    else f"https://{os.getenv('VERCEL_URL')}"
+    if os.getenv("VERCEL_URL")
+    else "http://localhost:3000"
+)
+CORS_ALLOWED_ORIGINS = unique(env_list("CORS_ALLOWED_ORIGINS") + [FRONTEND_URL])
+CSRF_TRUSTED_ORIGINS = unique(env_list("CSRF_TRUSTED_ORIGINS") + [FRONTEND_URL])
 
 ADMIN_API_KEY = os.getenv("BACKEND_ADMIN_API_KEY", "change-me-admin-key")
 RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
@@ -118,3 +156,8 @@ EMAIL_BACKEND = (
     if not RESEND_API_KEY
     else "django.core.mail.backends.locmem.EmailBackend"
 )
+
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SECURE = True
