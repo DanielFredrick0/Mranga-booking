@@ -21,6 +21,11 @@ const manrope = Manrope({
 export const metadata: Metadata = {
   title: "Mranga Tours & Safaris LTD",
   description: "Premium Kenya safaris, bush-and-beach journeys, and custom safari planning by Mranga Tours & Safaris LTD.",
+  icons: {
+    icon: "/icon.svg",
+    shortcut: "/icon.svg",
+    apple: "/icon.svg",
+  },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
