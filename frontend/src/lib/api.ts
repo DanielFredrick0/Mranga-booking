@@ -16,7 +16,8 @@ const API_BASE =
 const ADMIN_KEY = process.env.BACKEND_ADMIN_API_KEY ?? "";
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_BASE}${path}`, {
+  const url = `${API_BASE}${path}`;
+  const response = await fetch(url, {
     ...init,
     next: { revalidate: 60 },
     headers: {
@@ -26,7 +27,9 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   });
 
   if (!response.ok) {
-    throw new Error(`API request failed for ${path}`);
+    const body = await response.text();
+    console.error("API request failed", { url, path, status: response.status, body: body.slice(0, 200) });
+    throw new Error(`API request failed for ${path} (${response.status}) via ${url}`);
   }
 
   return response.json();
