@@ -368,7 +368,18 @@ def healthcheck(request):
         with connection.cursor() as cursor:
             cursor.execute("SELECT 1")
             cursor.fetchone()
-        return Response({"status": "ok", "service": settings.SITE_NAME, "database": "ok"})
+        return Response(
+            {
+                "status": "ok",
+                "service": settings.SITE_NAME,
+                "database": "ok",
+                "counts": {
+                    "destinations": Destination.objects.count(),
+                    "tours": TourPackage.objects.count(),
+                    "reviews": Review.objects.count(),
+                },
+            }
+        )
     except Exception as exc:
         return Response(
             {"status": "degraded", "service": settings.SITE_NAME, "database": "error", "detail": str(exc)},
