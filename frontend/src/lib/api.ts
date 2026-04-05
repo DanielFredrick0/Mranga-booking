@@ -8,7 +8,11 @@ import type {
   TourPackage,
 } from "@/types";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000/api";
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_BASE_URL ??
+  process.env.API_URL ??
+  process.env.NEXT_PUBLIC_API_URL ??
+  "http://localhost:8000/api";
 const ADMIN_KEY = process.env.BACKEND_ADMIN_API_KEY ?? "";
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {

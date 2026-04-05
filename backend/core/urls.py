@@ -3,6 +3,8 @@ from django.urls import include, path
 
 
 urlpatterns = [
-    path("admin/", admin.site.urls),
+    # Support Vercel Services routePrefix="/api" while keeping local "/api/*" routes.
+    path("", include("api.urls")),
     path("api/", include("api.urls")),
+    path("admin/", admin.site.urls),
 ]

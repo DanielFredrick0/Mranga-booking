@@ -111,12 +111,14 @@ Backend URL: `http://localhost:8000`
 
 ## Deploy notes
 
-- Deploy `frontend/` as a Next.js app on Vercel or another Node host.
-- Deploy `backend/` as a Django app on Render, Railway, Fly.io, or a container platform.
-- Point `NEXT_PUBLIC_API_BASE_URL` to the deployed Django API base URL.
+- This repo now includes a root `vercel.json` for a single Vercel project with two services:
+- `frontend/` served at `/`
+- `backend/app.py` served at `/api`
+- Vercel Services auto-provides `API_URL` and `NEXT_PUBLIC_API_URL`, so the frontend can call the backend without hardcoding a production URL.
 - Use a managed PostgreSQL database in production.
 - Set `DJANGO_DEBUG=False`, real `DJANGO_ALLOWED_HOSTS`, `CORS_ALLOWED_ORIGINS`, and `CSRF_TRUSTED_ORIGINS`.
 - Configure `RESEND_API_KEY` and a verified sending domain for production email.
+- In the Vercel dashboard, choose the `Services` framework preset for this repo.
 
 ## Admin access
 
@@ -124,4 +126,3 @@ Backend URL: `http://localhost:8000`
 - Django admin: `http://localhost:8000/admin/`
 - Default seeded Django admin user: `mrangaadmin`
 - Password comes from `DJANGO_SUPERUSER_PASSWORD`
-
