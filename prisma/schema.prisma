@@ -1,0 +1,88 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Destination {
+  id              Int           @id @default(autoincrement())
+  name            String        @unique
+  slug            String        @unique
+  description     String
+  heroImage       String
+  highlights      Json
+  bestTimeToVisit String
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  tours           TourPackage[]
+}
+
+model TourPackage {
+  id                Int           @id @default(autoincrement())
+  title             String
+  slug              String        @unique
+  shortDescription  String
+  fullDescription   String
+  durationDays      Int
+  durationNights    Int
+  priceFrom         Decimal
+  priceTo           Decimal
+  currency          String        @default("USD")
+  featuredImage     String
+  galleryImages     Json
+  travelStyle       String
+  privateOrShared   String
+  accommodationType String
+  itineraryJson     Json
+  inclusions        Json
+  exclusions        Json
+  isFeatured        Boolean       @default(false)
+  isActive          Boolean       @default(true)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  destinations      Destination[]
+}
+
+model Review {
+  id           Int      @id @default(autoincrement())
+  guestName    String
+  guestCountry String
+  rating       Int
+  reviewText   String
+  source       String
+  reviewDate   DateTime
+  isApproved   Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model QuoteRequest {
+  id                   Int      @id @default(autoincrement())
+  fullName             String
+  email                String
+  phone                String
+  country              String
+  travelStart          DateTime?
+  travelEnd            DateTime?
+  travelMonth          String
+  adults               Int
+  children             Int
+  startingLocation     String
+  durationDays         Int
+  destinationInterest  Json
+  tripType             String
+  accommodationLevel   String
+  privateOrShared      String
+  budgetMin            Int
+  budgetMax            Int
+  message              String
+  verificationCode     String
+  verificationExpiresAt DateTime?
+  isVerified           Boolean  @default(false)
+  status               String
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
