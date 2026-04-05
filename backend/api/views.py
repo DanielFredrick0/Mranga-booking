@@ -2,6 +2,7 @@ import random
 from datetime import timedelta
 
 from django.conf import settings
+from django.db import connection
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -363,4 +364,13 @@ class AdminQuoteViewSet(viewsets.ModelViewSet):
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def healthcheck(request):
-    return Response({"status": "ok", "service": settings.SITE_NAME})
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+            cursor.fetchone()
+        return Response({"status": "ok", "service": settings.SITE_NAME, "database": "ok"})
+    except Exception as exc:
+        return Response(
+            {"status": "degraded", "service": settings.SITE_NAME, "database": "error", "detail": str(exc)},
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
