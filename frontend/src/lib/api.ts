@@ -14,12 +14,18 @@ function unique(values: Array<string | undefined>) {
   return [...new Set(values.filter((value): value is string => Boolean(value)))];
 }
 
-function getApiBases() {
+async function getApiBases() {
   if (typeof window !== "undefined") {
     return unique(["/api", process.env.NEXT_PUBLIC_API_URL, process.env.NEXT_PUBLIC_API_BASE_URL]);
   }
 
+  const { headers } = await import("next/headers");
+  const headerStore = await headers();
+  const host = headerStore.get("x-forwarded-host") ?? headerStore.get("host");
+  const proto = headerStore.get("x-forwarded-proto") ?? "https";
+
   return unique([
+    host ? `${proto}://${host}/api` : undefined,
     process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}/api` : undefined,
     process.env.FRONTEND_URL ? `${process.env.FRONTEND_URL.replace(/\/$/, "")}/api` : undefined,
     process.env.API_URL,
@@ -30,7 +36,7 @@ function getApiBases() {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const apiBases = getApiBases();
+  const apiBases = await getApiBases();
   const requestInit: RequestInit = {
     ...init,
     ...(init?.method && init.method !== "GET" ? {} : { next: { revalidate: 60 } }),
